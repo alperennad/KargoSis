@@ -1,0 +1,156 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-dark-950 text-dark-100 min-h-screen;
+    background-image: 
+      radial-gradient(ellipse at top right, rgba(212, 130, 46, 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom left, rgba(51, 78, 104, 0.1) 0%, transparent 50%);
+  }
+
+  h1, h2, h3 {
+    @apply font-display;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-medium rounded-lg
+           shadow-lg hover:shadow-glow transition-all duration-300 hover:from-primary-600 hover:to-primary-700
+           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-dark-900;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 bg-secondary-700 text-white font-medium rounded-lg border border-secondary-600
+           hover:bg-secondary-600 transition-all duration-300 focus:outline-none focus:ring-2 
+           focus:ring-secondary-500 focus:ring-offset-2 focus:ring-offset-dark-900;
+  }
+
+  .btn-outline {
+    @apply px-6 py-3 bg-transparent border-2 border-primary-500 text-primary-400 font-medium rounded-lg
+           hover:bg-primary-500/10 transition-all duration-300 focus:outline-none focus:ring-2 
+           focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-dark-900;
+  }
+
+  .card {
+    @apply bg-dark-900/80 backdrop-blur-sm border border-dark-700 rounded-xl p-6 
+           shadow-lg hover:shadow-premium transition-all duration-300;
+  }
+
+  .card-elevated {
+    @apply bg-gradient-to-br from-dark-800/90 to-dark-900/90 backdrop-blur-md 
+           border border-dark-600/50 rounded-2xl p-8 shadow-xl;
+  }
+
+  .input {
+    @apply w-full px-4 py-3 bg-dark-800 border border-dark-600 rounded-lg text-dark-100
+           placeholder:text-dark-400 focus:outline-none focus:border-primary-500 focus:ring-2 
+           focus:ring-primary-500/20 transition-all duration-200;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-dark-300 mb-2;
+  }
+
+  .nav-link {
+    @apply px-4 py-2 text-dark-300 hover:text-primary-400 transition-colors duration-200 font-medium;
+  }
+
+  .nav-link-active {
+    @apply px-4 py-2 text-primary-400 border-b-2 border-primary-400 font-medium;
+  }
+
+  .stat-card {
+    @apply bg-gradient-to-br from-dark-800 to-dark-900 rounded-xl p-6 border border-dark-700
+           relative overflow-hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-br from-primary-500/5 to-transparent;
+  }
+
+  .table-header {
+    @apply bg-dark-800 text-dark-300 text-sm font-semibold uppercase tracking-wider;
+  }
+
+  .table-row {
+    @apply border-b border-dark-700 hover:bg-dark-800/50 transition-colors duration-150;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-success {
+    @apply bg-accent-500/20 text-accent-400 border border-accent-500/30;
+  }
+
+  .badge-warning {
+    @apply bg-yellow-500/20 text-yellow-400 border border-yellow-500/30;
+  }
+
+  .badge-error {
+    @apply bg-red-500/20 text-red-400 border border-red-500/30;
+  }
+
+  .badge-info {
+    @apply bg-blue-500/20 text-blue-400 border border-blue-500/30;
+  }
+}
+
+/* Leaflet harita özelleştirmeleri */
+.leaflet-container {
+  @apply rounded-xl;
+  background: #102a43 !important;
+}
+
+.leaflet-tile {
+  filter: brightness(0.9) contrast(1.1) saturate(0.8);
+}
+
+.leaflet-popup-content-wrapper {
+  @apply bg-dark-800 text-dark-100 border border-dark-600 rounded-lg shadow-xl;
+}
+
+.leaflet-popup-tip {
+  @apply bg-dark-800;
+}
+
+.leaflet-control-zoom a {
+  @apply bg-dark-800 text-dark-100 border-dark-600 hover:bg-dark-700;
+}
+
+/* Scrollbar özelleştirme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-dark-900;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-dark-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-dark-500;
+}
+
+/* Animasyonlar */
+.animate-stagger > * {
+  animation: slideUp 0.5s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-stagger > *:nth-child(1) { animation-delay: 0.1s; }
+.animate-stagger > *:nth-child(2) { animation-delay: 0.2s; }
+.animate-stagger > *:nth-child(3) { animation-delay: 0.3s; }
+.animate-stagger > *:nth-child(4) { animation-delay: 0.4s; }
+.animate-stagger > *:nth-child(5) { animation-delay: 0.5s; }
+.animate-stagger > *:nth-child(6) { animation-delay: 0.6s; }
+
