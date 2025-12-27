@@ -2,7 +2,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   Truck, LayoutDashboard, MapPin, Car, Route, 
-  FileText, LogOut, ChevronLeft, Menu 
+  FileText, LogOut, ChevronLeft, Menu, Users 
 } from 'lucide-react';
 import { useState } from 'react';
 import clsx from 'clsx';
@@ -14,6 +14,7 @@ const sidebarLinks = [
   { to: '/admin/route-planning', label: 'Rota Planlama', icon: Route },
   { to: '/admin/routes', label: 'Tüm Rotalar', icon: Truck },
   { to: '/admin/reports', label: 'Raporlar', icon: FileText },
+  { to: '/admin/users', label: 'Kullanıcılar', icon: Users },
 ];
 
 export default function AdminLayout() {

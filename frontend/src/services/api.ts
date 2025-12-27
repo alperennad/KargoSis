@@ -224,6 +224,29 @@ export const optimizationAPI = {
   },
 };
 
+// Users API
+export const usersAPI = {
+  getAll: async () => {
+    const response = await api.get<User[]>('/users/');
+    return response.data;
+  },
+
+  toggleAdmin: async (userId: number) => {
+    const response = await api.put(`/users/${userId}/toggle-admin`);
+    return response.data;
+  },
+
+  toggleActive: async (userId: number) => {
+    const response = await api.put(`/users/${userId}/toggle-active`);
+    return response.data;
+  },
+
+  delete: async (userId: number) => {
+    const response = await api.delete(`/users/${userId}`);
+    return response.data;
+  },
+};
+
 // Dashboard API
 export const dashboardAPI = {
   getStats: async () => {

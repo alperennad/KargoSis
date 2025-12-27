@@ -9,7 +9,7 @@ from app.models.vehicle import Vehicle
 from app.models.cargo import Cargo, CargoStatus
 from app.models.route import Route, RouteStop
 from app.models.trip import Trip
-from app.schemas import OptimizationRequest, OptimizationResult, VehicleRoute, StationResponse, StationCargoInput
+from app.schemas import OptimizationRequest, OptimizationResult, VehicleRoute, StationResponse, StationCargoInput, RentalVehicleRequirement
 from app.services.route_optimizer import RouteOptimizer, Station as OpStation, Vehicle as OpVehicle
 from app.routes.auth import get_admin_user
 from app.models.user import User
@@ -71,18 +71,36 @@ async def calculate_optimal_routes(
             plate_number=v.plate_number,
             capacity=v.capacity,
             is_rented=v.is_rented,
-            rental_cost=v.rental_cost
+            rental_cost=v.rental_cost,
+            fuel_consumption=v.fuel_consumption
         )
         for v in vehicles
     ]
     
     # Optimizasyon
     optimizer = RouteOptimizer()
+    rental_requirement = None
     
     if request.problem_type == "unlimited":
-        # Sınırsız araç problemi
-        routes = optimizer.optimize_unlimited_vehicles(depot, stations_list, vehicles_list)
-        rejected = []
+        # Mevcut araçlarla optimizasyon (kiralık araç otomatik eklenmez)
+        optimization_output = optimizer.optimize_unlimited_vehicles(depot, stations_list, vehicles_list)
+        routes = optimization_output.routes
+        rejected = [
+            StationCargoInput(
+                station_id=s.id,
+                cargo_count=s.cargo_count,
+                total_weight=s.total_weight
+            )
+            for s in optimization_output.rejected_stations
+        ]
+        
+        # Kiralık araç gereksinimi varsa bilgi oluştur
+        if optimization_output.required_rental_capacity > 0:
+            rental_requirement = RentalVehicleRequirement(
+                required_capacity=optimization_output.required_rental_capacity,
+                estimated_cost=optimization_output.required_rental_capacity * 0.4,  # Tahmini maliyet
+                reason=f"{optimization_output.required_rental_capacity:.0f} kg kapasiteli kiralık araç eklemeniz gerekiyor. Araçlar sayfasından kiralık araç ekleyebilirsiniz."
+            )
     else:
         # Belirli sayıda araç problemi
         if request.max_vehicles:
@@ -149,7 +167,8 @@ async def calculate_optimal_routes(
         vehicles_used=len(vehicle_routes),
         rented_vehicles=rented_count,
         vehicle_routes=vehicle_routes,
-        rejected_cargos=rejected
+        rejected_cargos=rejected,
+        rental_requirement=rental_requirement
     )
 
 @router.post("/apply")

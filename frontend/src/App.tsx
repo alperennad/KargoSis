@@ -23,6 +23,7 @@ import VehiclesPage from './pages/admin/VehiclesPage';
 import RoutePlanningPage from './pages/admin/RoutePlanningPage';
 import AllRoutesPage from './pages/admin/AllRoutesPage';
 import ReportsPage from './pages/admin/ReportsPage';
+import UsersPage from './pages/admin/UsersPage';
 
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
   const { isAuthenticated, isAdmin, isLoading } = useAuth();
@@ -86,6 +87,7 @@ function AppRoutes() {
         <Route path="route-planning" element={<RoutePlanningPage />} />
         <Route path="routes" element={<AllRoutesPage />} />
         <Route path="reports" element={<ReportsPage />} />
+        <Route path="users" element={<UsersPage />} />
       </Route>
 
       {/* Catch all */}

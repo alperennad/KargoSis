@@ -170,6 +170,11 @@ class VehicleRoute(BaseModel):
     route_cost: float
     route_geometry: Optional[str] = None
 
+class RentalVehicleRequirement(BaseModel):
+    required_capacity: float
+    estimated_cost: float
+    reason: str
+
 class OptimizationResult(BaseModel):
     total_cost: float
     total_distance: float
@@ -179,6 +184,7 @@ class OptimizationResult(BaseModel):
     rented_vehicles: int
     vehicle_routes: List[VehicleRoute]
     rejected_cargos: List[StationCargoInput] = []
+    rental_requirement: Optional[RentalVehicleRequirement] = None  # Kiralık araç gereksinimi
 
 # ==================== TRIP SCHEMAS ====================
 class TripResponse(BaseModel):

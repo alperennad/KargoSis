@@ -1,44 +1,19 @@
 import { Link } from 'react-router-dom';
-import { Truck, Package, MapPin, Shield, Zap, BarChart3 } from 'lucide-react';
 
 export default function HomePage() {
-  const features = [
-    {
-      icon: Package,
-      title: 'Kolay Kargo Gönderimi',
-      description: 'Birkaç tıkla kargonuzu gönderin, istasyon seçin ve takip kodunuzu alın.',
-    },
-    {
-      icon: MapPin,
-      title: 'Anlık Takip',
-      description: 'Kargonuzun nerede olduğunu gerçek zamanlı harita üzerinde takip edin.',
-    },
-    {
-      icon: Zap,
-      title: 'Optimize Rotalar',
-      description: 'Akıllı algoritmalarla en verimli teslimat rotaları oluşturulur.',
-    },
-    {
-      icon: Shield,
-      title: 'Güvenli Teslimat',
-      description: 'Kargolarınız güvenle ve zamanında teslim edilir.',
-    },
-    {
-      icon: BarChart3,
-      title: 'Detaylı Raporlar',
-      description: 'Tüm seferler ve maliyetler anlık olarak raporlanır.',
-    },
-    {
-      icon: Truck,
-      title: 'Filo Yönetimi',
-      description: 'Araç kapasiteleri ve maliyet optimizasyonu tek panelde.',
-    },
-  ];
-
   return (
     <div className="animate-fade-in">
       {/* Hero Section */}
       <section className="relative overflow-hidden">
+        {/* Background Image with Blur */}
+        <div className="absolute inset-0">
+          <img 
+            src="/hero-bg.webp" 
+            alt="" 
+            className="w-full h-full object-cover blur-sm scale-105"
+          />
+          <div className="absolute inset-0 bg-dark-900/80" />
+        </div>
         <div className="absolute inset-0 bg-gradient-to-br from-primary-500/10 via-transparent to-secondary-700/10" />
         <div className="absolute top-20 right-20 w-96 h-96 bg-primary-500/20 rounded-full blur-3xl" />
         <div className="absolute bottom-20 left-20 w-72 h-72 bg-secondary-600/20 rounded-full blur-3xl" />
@@ -89,35 +64,6 @@ export default function HomePage() {
                   {stat.value}
                 </div>
                 <div className="text-dark-400">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="font-display text-4xl font-bold text-dark-50 mb-4">
-              Neden KargoSis?
-            </h2>
-            <p className="text-dark-400 max-w-2xl mx-auto">
-              Modern teknolojiler ve akıllı algoritmalar ile kargo yönetimini 
-              kolaylaştırıyoruz.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 animate-stagger">
-            {features.map((feature) => (
-              <div key={feature.title} className="card group">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary-500/20 to-primary-600/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <feature.icon className="w-6 h-6 text-primary-400" />
-                </div>
-                <h3 className="font-display text-xl font-semibold text-dark-100 mb-2">
-                  {feature.title}
-                </h3>
-                <p className="text-dark-400">{feature.description}</p>
               </div>
             ))}
           </div>

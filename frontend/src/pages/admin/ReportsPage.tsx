@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BarChart3, TrendingUp, DollarSign, Truck, Package, Calendar } from 'lucide-react';
+import { BarChart3, TrendingUp, DollarSign, Truck, Package } from 'lucide-react';
 import { dashboardAPI } from '../../services/api';
 import type { Trip, DashboardStats } from '../../types';
 import {
@@ -44,7 +44,6 @@ export default function ReportsPage() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [summary, setSummary] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [dateRange, setDateRange] = useState({ start: '', end: '' });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,15 +64,6 @@ export default function ReportsPage() {
     };
     fetchData();
   }, []);
-
-  const fetchSummaryWithDates = async () => {
-    try {
-      const summaryData = await dashboardAPI.getSummary(dateRange.start, dateRange.end);
-      setSummary(summaryData);
-    } catch (error) {
-      console.error('Özet alınamadı:', error);
-    }
-  };
 
   if (loading) {
     return (
@@ -101,33 +91,9 @@ export default function ReportsPage() {
   return (
     <div className="animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="font-display text-3xl font-bold text-dark-50">Raporlar</h1>
-          <p className="text-dark-400 mt-1">Sefer istatistikleri ve analizler</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <input
-            type="date"
-            value={dateRange.start}
-            onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-            className="input w-auto"
-          />
-          <span className="text-dark-400">-</span>
-          <input
-            type="date"
-            value={dateRange.end}
-            onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-            className="input w-auto"
-          />
-          <button
-            onClick={fetchSummaryWithDates}
-            className="btn-secondary"
-          >
-            <Calendar className="w-4 h-4 mr-2" />
-            Filtrele
-          </button>
-        </div>
+      <div className="mb-8">
+        <h1 className="font-display text-3xl font-bold text-dark-50">Raporlar</h1>
+        <p className="text-dark-400 mt-1">Sefer istatistikleri ve analizler</p>
       </div>
 
       {/* Overview Stats */}

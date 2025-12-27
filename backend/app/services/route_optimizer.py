@@ -25,6 +25,7 @@ class Vehicle:
     capacity: float
     is_rented: bool
     rental_cost: float
+    fuel_consumption: float = 0.15  # litre/km
 
 @dataclass
 class RouteInfo:
@@ -36,15 +37,26 @@ class RouteInfo:
     route_cost: float
     route_geometry: Optional[str] = None
 
+@dataclass
+class OptimizationOutput:
+    routes: List['RouteInfo']
+    rejected_stations: List[Station]
+    required_rental_capacity: float = 0.0  # Gereken ek kapasite
+
 class RouteOptimizer:
     """
     Clarke-Wright Savings Algoritması kullanarak VRP çözümü
     Sezgisel yaklaşım - O(n²) karmaşıklık
     """
     
-    COST_PER_KM = 1.0  # km başına maliyet
+    FUEL_PRICE_PER_LITRE = 45.0  # Yakıt fiyatı (TL/litre)
     RENTAL_COST = 200.0  # Araç kiralama maliyeti
     RENTAL_CAPACITY = 500.0  # Kiralık araç kapasitesi
+    DEFAULT_FUEL_CONSUMPTION = 0.15  # Varsayılan yakıt tüketimi (litre/km)
+    
+    def calculate_fuel_cost(self, distance: float, fuel_consumption: float) -> float:
+        """Yakıt maliyetini hesapla: mesafe * yakıt_tüketimi * yakıt_fiyatı"""
+        return distance * fuel_consumption * self.FUEL_PRICE_PER_LITRE
     
     def __init__(self):
         self.distance_service = DistanceService()
@@ -71,13 +83,12 @@ class RouteOptimizer:
         return savings
     
     def optimize_unlimited_vehicles(self, depot: Station, stations: List[Station], 
-                                     vehicles: List[Vehicle]) -> List[RouteInfo]:
+                                     vehicles: List[Vehicle]) -> OptimizationOutput:
         """
-        Sınırsız araç problemi çözümü
-        Mevcut araçlar yetmezse kiralık araç ekler
+        Araç optimizasyonu - mevcut araçları kullanır, kiralık araç EKLEMEZ
         """
         if not stations:
-            return []
+            return OptimizationOutput(routes=[], rejected_stations=[], required_rental_capacity=0)
         
         # Mesafe matrisi oluştur (depot dahil)
         all_stations = [depot] + stations
@@ -91,30 +102,20 @@ class RouteOptimizer:
         route_loads: Dict[int, float] = {i: all_stations[i].total_weight for i in range(1, len(all_stations))}
         station_route: Dict[int, int] = {i: i for i in range(1, len(all_stations))}
         
-        # Araçları kapasiteye göre sırala (büyükten küçüğe)
-        available_vehicles = sorted(vehicles, key=lambda v: v.capacity, reverse=True)
+        # Araçları kapasiteye göre sırala (büyükten küçüğe) - SADECE mevcut araçlar
+        available_vehicles = sorted([v for v in vehicles if not v.is_rented], key=lambda v: v.capacity, reverse=True)
+        # Mevcut kiralık araçları da ekle (veritabanında kayıtlı olanlar)
+        available_vehicles.extend(sorted([v for v in vehicles if v.is_rented], key=lambda v: v.capacity, reverse=True))
         
         # Toplam kapasite
         total_capacity = sum(v.capacity for v in available_vehicles)
         total_demand = sum(s.total_weight for s in stations)
         
-        # Gerekli kiralık araç sayısı
-        extra_capacity_needed = max(0, total_demand - total_capacity)
-        num_rentals = int(extra_capacity_needed / self.RENTAL_CAPACITY) + (1 if extra_capacity_needed % self.RENTAL_CAPACITY > 0 else 0)
+        # Gerekli ek kapasite hesapla (kiralık araç EKLEMEYECEĞİZ, sadece bilgi olarak döneceğiz)
+        required_rental_capacity = max(0, total_demand - total_capacity)
         
-        # Kiralık araçları ekle
-        for i in range(num_rentals):
-            rental_vehicle = Vehicle(
-                id=-i-1,
-                plate_number=f"KİRALIK-{i+1}",
-                capacity=self.RENTAL_CAPACITY,
-                is_rented=True,
-                rental_cost=self.RENTAL_COST
-            )
-            available_vehicles.append(rental_vehicle)
-        
-        # Maksimum araç kapasitesi (şimdilik en büyük araç)
-        max_capacity = max(v.capacity for v in available_vehicles)
+        # Maksimum araç kapasitesi
+        max_capacity = max(v.capacity for v in available_vehicles) if available_vehicles else 0
         
         # Savings algoritması ile rotaları birleştir
         while savings:
@@ -136,26 +137,20 @@ class RouteOptimizer:
                 continue
             
             # Rotaları birleştir
-            # i rotanın sonunda ve j rotanın başında olmalı
             route_i_list = routes[route_i]
             route_j_list = routes[route_j]
             
             if route_i_list[-1] == i and route_j_list[0] == j:
-                # i sonunda, j başında - doğrudan birleştir
                 new_route = route_i_list + route_j_list
             elif route_i_list[0] == i and route_j_list[-1] == j:
-                # i başında, j sonunda - ters birleştir
                 new_route = route_j_list + route_i_list
             elif route_i_list[0] == i and route_j_list[0] == j:
-                # Her ikisi de başında
                 new_route = list(reversed(route_i_list)) + route_j_list
             elif route_i_list[-1] == i and route_j_list[-1] == j:
-                # Her ikisi de sonunda
                 new_route = route_i_list + list(reversed(route_j_list))
             else:
                 continue
             
-            # Eski rotaları sil, yeni rotayı ekle
             del routes[route_i]
             del routes[route_j]
             del route_loads[route_i]
@@ -170,6 +165,7 @@ class RouteOptimizer:
         
         # Rotaları araçlara ata - kapasite kontrolü ile
         result = []
+        rejected_stations = []
         sorted_routes = sorted(routes.items(), key=lambda x: route_loads[x[0]], reverse=True)
         used_vehicles = set()
         
@@ -185,41 +181,27 @@ class RouteOptimizer:
                     used_vehicles.add(vehicle.id)
                     break
             
-            # Uygun araç yoksa rotayı böl veya kiralık araç ekle
+            # Uygun araç yoksa - rotayı böl veya reddet
             if assigned_vehicle is None:
-                # Rotayı böl - her istasyonu ayrı değerlendir
                 remaining_stations = route_stations.copy()
-                max_iterations = len(remaining_stations) * 10  # Sonsuz döngü koruması
+                max_iterations = len(remaining_stations) * 10
                 iteration = 0
                 
                 while remaining_stations and iteration < max_iterations:
                     iteration += 1
                     
-                    # En ağır istasyonun kapasitesini belirle
-                    max_station_weight = max(s.total_weight for s in remaining_stations)
-                    
-                    # Yeni bir araç bul veya kirala
+                    # Kullanılabilir araç bul
                     best_vehicle = None
                     for vehicle in available_vehicles:
-                        if vehicle.id not in used_vehicles and vehicle.capacity >= max_station_weight:
+                        if vehicle.id not in used_vehicles:
                             best_vehicle = vehicle
                             used_vehicles.add(vehicle.id)
                             break
                     
                     if best_vehicle is None:
-                        # Kiralık araç ekle - en ağır istasyona göre kapasite belirle
-                        rental_id = -(len([v for v in available_vehicles if v.is_rented]) + 1)
-                        # Kiralık araç kapasitesi en az en ağır istasyonu taşıyabilmeli
-                        rental_capacity = max(self.RENTAL_CAPACITY, max_station_weight)
-                        best_vehicle = Vehicle(
-                            id=rental_id,
-                            plate_number=f"KİRALIK-{abs(rental_id)}",
-                            capacity=rental_capacity,
-                            is_rented=True,
-                            rental_cost=self.RENTAL_COST * (rental_capacity / self.RENTAL_CAPACITY)  # Kapasite oranına göre maliyet
-                        )
-                        available_vehicles.append(best_vehicle)
-                        used_vehicles.add(best_vehicle.id)
+                        # Araç kalmadı - kalan istasyonları reddet
+                        rejected_stations.extend(remaining_stations)
+                        break
                     
                     # Bu araca sığan istasyonları ekle
                     current_load = 0.0
@@ -236,11 +218,11 @@ class RouteOptimizer:
                     remaining_stations = still_remaining
                     
                     if current_stations:
-                        # Bu araç için rota oluştur
                         total_distance = self._calculate_route_distance_for_stations(depot, current_stations, distance_matrix, all_stations)
                         total_weight = sum(s.total_weight for s in current_stations)
                         cargo_count = sum(s.cargo_count for s in current_stations)
-                        route_cost = total_distance * self.COST_PER_KM
+                        # Yakıt maliyeti: mesafe * yakıt_tüketimi * yakıt_fiyatı
+                        route_cost = self.calculate_fuel_cost(total_distance, best_vehicle.fuel_consumption)
                         if best_vehicle.is_rented:
                             route_cost += best_vehicle.rental_cost
                         
@@ -259,23 +241,21 @@ class RouteOptimizer:
                             route_geometry=route_geometry
                         ))
                 
-                continue  # Bu rota işlendi, sonrakine geç
+                continue
             
             vehicle = assigned_vehicle
             
-            # Rota mesafesini hesapla
             total_distance = self._calculate_route_distance(depot, route_stations, distance_matrix, 
                                                            [all_stations.index(s) for s in [depot] + route_stations])
             
             total_weight = sum(s.total_weight for s in route_stations)
             cargo_count = sum(s.cargo_count for s in route_stations)
             
-            # Maliyet hesapla
-            route_cost = total_distance * self.COST_PER_KM
+            # Yakıt maliyeti: mesafe * yakıt_tüketimi * yakıt_fiyatı
+            route_cost = self.calculate_fuel_cost(total_distance, vehicle.fuel_consumption)
             if vehicle.is_rented:
                 route_cost += vehicle.rental_cost
             
-            # Rota geometrisi al
             coordinates = [(depot.latitude, depot.longitude)]
             coordinates.extend([(s.latitude, s.longitude) for s in route_stations])
             coordinates.append((depot.latitude, depot.longitude))
@@ -291,7 +271,15 @@ class RouteOptimizer:
                 route_geometry=route_geometry
             ))
         
-        return result
+        # Reddedilen istasyonların toplam ağırlığını hesapla
+        if rejected_stations:
+            required_rental_capacity = sum(s.total_weight for s in rejected_stations)
+        
+        return OptimizationOutput(
+            routes=result,
+            rejected_stations=rejected_stations,
+            required_rental_capacity=required_rental_capacity
+        )
     
     def optimize_limited_vehicles(self, depot: Station, stations: List[Station], 
                                    vehicles: List[Vehicle], 
@@ -367,7 +355,10 @@ class RouteOptimizer:
             
             total_weight = sum(s.total_weight for s in route_stations)
             cargo_count = sum(s.cargo_count for s in route_stations)
-            route_cost = total_distance * self.COST_PER_KM
+            # Yakıt maliyeti: mesafe * yakıt_tüketimi * yakıt_fiyatı
+            route_cost = self.calculate_fuel_cost(total_distance, vehicle.fuel_consumption)
+            if vehicle.is_rented:
+                route_cost += vehicle.rental_cost
             
             # Rota geometrisi
             coordinates = [(depot.latitude, depot.longitude)]

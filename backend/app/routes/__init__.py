@@ -5,6 +5,7 @@ from .routes import router as routes_router
 from .auth import router as auth_router
 from .optimization import router as optimization_router
 from .dashboard import router as dashboard_router
+from .users import router as users_router
 
 __all__ = [
     'stations_router', 
@@ -13,6 +14,7 @@ __all__ = [
     'routes_router',
     'auth_router',
     'optimization_router',
-    'dashboard_router'
+    'dashboard_router',
+    'users_router'
 ]
 

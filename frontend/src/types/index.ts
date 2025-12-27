@@ -104,6 +104,12 @@ export interface VehicleRoute {
   route_geometry: string | null;
 }
 
+export interface RentalVehicleRequirement {
+  required_capacity: number;
+  estimated_cost: number;
+  reason: string;
+}
+
 export interface OptimizationResult {
   total_cost: number;
   total_distance: number;
@@ -113,6 +119,7 @@ export interface OptimizationResult {
   rented_vehicles: number;
   vehicle_routes: VehicleRoute[];
   rejected_cargos: StationCargoInput[];
+  rental_requirement?: RentalVehicleRequirement;
 }
 
 export interface DashboardStats {

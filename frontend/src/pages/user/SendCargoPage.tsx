@@ -7,6 +7,7 @@ import MapComponent from '../../components/MapComponent';
 
 export default function SendCargoPage() {
   const [stations, setStations] = useState<Station[]>([]);
+  const [headquartersStation, setHeadquartersStation] = useState<Station | null>(null);
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [formData, setFormData] = useState({
     sender_name: '',
@@ -23,7 +24,10 @@ export default function SendCargoPage() {
     const fetchStations = async () => {
       try {
         const data = await stationsAPI.getAll();
-        // Merkez istasyonunu filtrele
+        // Merkez istasyonunu ayır
+        const hq = data.find((s) => s.is_headquarters);
+        if (hq) setHeadquartersStation(hq);
+        // Diğer istasyonları filtrele
         setStations(data.filter((s) => !s.is_headquarters));
       } catch (error) {
         console.error('İstasyonlar alınamadı:', error);
@@ -137,6 +141,8 @@ export default function SendCargoPage() {
               stations={stations}
               highlightStationId={selectedStation?.id}
               onStationClick={(station) => setSelectedStation(station)}
+              headquartersStation={headquartersStation || undefined}
+              showRouteToHeadquarters={!!selectedStation}
             />
           </div>
 
@@ -183,6 +189,22 @@ export default function SendCargoPage() {
             <div className="mb-6 p-4 bg-primary-500/10 border border-primary-500/30 rounded-lg">
               <p className="text-dark-400 text-sm">Seçilen İstasyon</p>
               <p className="text-primary-400 font-semibold text-lg">{selectedStation.name}</p>
+              {headquartersStation && (
+                <p className="text-dark-400 text-sm mt-2">
+                  <span className="text-accent-400">📍 Umuttepe'ye mesafe: </span>
+                  {(() => {
+                    const R = 6371;
+                    const dLat = (headquartersStation.latitude - selectedStation.latitude) * Math.PI / 180;
+                    const dLon = (headquartersStation.longitude - selectedStation.longitude) * Math.PI / 180;
+                    const a = 
+                      Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(selectedStation.latitude * Math.PI / 180) * Math.cos(headquartersStation.latitude * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+                    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                    return `~${(R * c).toFixed(1)} km`;
+                  })()}
+                </p>
+              )}
             </div>
           )}
 

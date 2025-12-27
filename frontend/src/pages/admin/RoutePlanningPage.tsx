@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { 
   Route, Play, Settings, Truck, MapPin, Package, 
-  AlertCircle, CheckCircle, ArrowRight, Calculator, TrendingDown
+  AlertCircle, CheckCircle, ArrowRight, Calculator, TrendingDown, AlertTriangle
 } from 'lucide-react';
 import { stationsAPI, optimizationAPI, vehiclesAPI } from '../../services/api';
 import type { Station, OptimizationResult, Scenario, StationCargoInput, Vehicle } from '../../types';
@@ -691,15 +691,49 @@ export default function RoutePlanningPage() {
                 ))}
               </div>
 
+              {/* Kiralık Araç Gereksinimi Uyarısı */}
+              {result.rental_requirement && (
+                <div className="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                  <h4 className="text-yellow-400 font-medium mb-2 flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5" />
+                    Kiralık Araç Gerekiyor!
+                  </h4>
+                  <p className="text-dark-300 mb-3">
+                    {result.rental_requirement.reason}
+                  </p>
+                  <div className="flex items-center gap-4 text-sm">
+                    <span className="text-dark-400">
+                      Gerekli Kapasite: <span className="text-yellow-400 font-semibold">{result.rental_requirement.required_capacity.toFixed(0)} kg</span>
+                    </span>
+                    <span className="text-dark-400">
+                      Tahmini Maliyet: <span className="text-yellow-400 font-semibold">~{result.rental_requirement.estimated_cost.toFixed(0)} ₺</span>
+                    </span>
+                  </div>
+                  <a 
+                    href="/admin/vehicles" 
+                    className="inline-block mt-3 px-4 py-2 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 rounded-lg transition-colors text-sm font-medium"
+                  >
+                    Araçlar Sayfasına Git →
+                  </a>
+                </div>
+              )}
+
               {/* Rejected Cargos */}
               {result.rejected_cargos.length > 0 && (
                 <div className="mt-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
                   <h4 className="text-red-400 font-medium mb-2">
-                    Reddedilen Kargolar ({result.rejected_cargos.length})
+                    Taşınamayan Kargolar ({result.rejected_cargos.length} istasyon)
                   </h4>
-                  <p className="text-dark-400 text-sm">
-                    Kapasite yetersizliği nedeniyle bazı kargolar taşınamadı.
+                  <p className="text-dark-400 text-sm mb-2">
+                    Mevcut araç kapasitesi yetersiz. Kiralık araç ekleyerek bu kargoları da taşıyabilirsiniz.
                   </p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {result.rejected_cargos.map((cargo, i) => (
+                      <span key={i} className="px-2 py-1 bg-red-500/20 text-red-300 rounded text-xs">
+                        {stations.find(s => s.id === cargo.station_id)?.name || `İstasyon #${cargo.station_id}`}: {cargo.total_weight} kg
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
 

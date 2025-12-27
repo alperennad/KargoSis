@@ -8,6 +8,8 @@ interface MapComponentProps {
   highlightStationId?: number;
   showAllStations?: boolean;
   onStationClick?: (station: Station) => void;
+  headquartersStation?: Station;
+  showRouteToHeadquarters?: boolean;
 }
 
 // Özel marker ikonları
@@ -52,6 +54,8 @@ export default function MapComponent({
   highlightStationId,
   showAllStations = true,
   onStationClick,
+  headquartersStation,
+  showRouteToHeadquarters = false,
 }: MapComponentProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -175,6 +179,78 @@ export default function MapComponent({
       });
     });
 
+    // Merkez ile seçili istasyon arasında rota çiz
+    if (showRouteToHeadquarters && headquartersStation && highlightStationId) {
+      const selectedStation = stations.find(s => s.id === highlightStationId);
+      if (selectedStation) {
+        // Merkez marker'ı ekle
+        const hqMarker = L.marker([headquartersStation.latitude, headquartersStation.longitude], { icon: headquartersIcon })
+          .addTo(map)
+          .bindPopup(`
+            <div style="font-family: 'Outfit', sans-serif; padding: 4px;">
+              <h3 style="font-weight: 600; font-size: 14px; margin-bottom: 4px; color: #f1f5f9;">
+                ${headquartersStation.name}
+              </h3>
+              <span style="color: #10b981; font-size: 12px;">Merkez (Varış Noktası)</span>
+            </div>
+          `);
+        markersRef.current.push(hqMarker);
+
+        // Merkez ile seçili istasyon arasında çizgi çiz
+        const routeLine = L.polyline(
+          [
+            [selectedStation.latitude, selectedStation.longitude],
+            [headquartersStation.latitude, headquartersStation.longitude]
+          ],
+          {
+            color: '#10b981',
+            weight: 3,
+            opacity: 0.8,
+            dashArray: '8, 8',
+          }
+        ).addTo(map);
+        polylinesRef.current.push(routeLine);
+
+        // Mesafeyi hesapla (Haversine formülü)
+        const R = 6371; // Dünya'nın yarıçapı (km)
+        const dLat = (headquartersStation.latitude - selectedStation.latitude) * Math.PI / 180;
+        const dLon = (headquartersStation.longitude - selectedStation.longitude) * Math.PI / 180;
+        const a = 
+          Math.sin(dLat/2) * Math.sin(dLat/2) +
+          Math.cos(selectedStation.latitude * Math.PI / 180) * Math.cos(headquartersStation.latitude * Math.PI / 180) *
+          Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const distance = R * c;
+
+        // Çizginin ortasına mesafe etiketi ekle
+        const midLat = (selectedStation.latitude + headquartersStation.latitude) / 2;
+        const midLng = (selectedStation.longitude + headquartersStation.longitude) / 2;
+        
+        const distanceLabel = L.marker([midLat, midLng], {
+          icon: L.divIcon({
+            className: 'distance-label',
+            html: `
+              <div style="
+                background: rgba(16, 185, 129, 0.9);
+                color: white;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 12px;
+                font-weight: 600;
+                white-space: nowrap;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+              ">
+                ~${distance.toFixed(1)} km
+              </div>
+            `,
+            iconSize: [60, 20],
+            iconAnchor: [30, 10],
+          })
+        }).addTo(map);
+        markersRef.current.push(distanceLabel);
+      }
+    }
+
     // Haritayı tüm marker'lara sığdır
     if (markersRef.current.length > 0) {
       const group = L.featureGroup(markersRef.current);
@@ -198,7 +274,7 @@ export default function MapComponent({
       markersRef.current.forEach((marker) => marker.remove());
       polylinesRef.current.forEach((polyline) => polyline.remove());
     };
-  }, [stations, routes, highlightStationId, showAllStations, onStationClick]);
+  }, [stations, routes, highlightStationId, showAllStations, onStationClick, headquartersStation, showRouteToHeadquarters]);
 
   // Cleanup on unmount
   useEffect(() => {

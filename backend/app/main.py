@@ -10,7 +10,8 @@ from app.routes import (
     routes_router,
     auth_router,
     optimization_router,
-    dashboard_router
+    dashboard_router,
+    users_router
 )
 from app.utils.seed_data import seed_initial_data
 
@@ -62,6 +63,7 @@ app.add_middleware(
 
 # Router'ları ekle
 app.include_router(auth_router)
+app.include_router(users_router)
 app.include_router(stations_router)
 app.include_router(cargos_router)
 app.include_router(vehicles_router)
