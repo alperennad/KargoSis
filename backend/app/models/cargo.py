@@ -20,6 +20,7 @@ class Cargo(Base):
     sender_phone = Column(String(20), nullable=False)
     weight = Column(Float, nullable=False)  # kg
     station_id = Column(Integer, ForeignKey("stations.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Kargoyu gönderen kullanıcı
     status = Column(String(20), default=CargoStatus.PENDING.value)
     created_at = Column(DateTime, default=datetime.utcnow)
     delivery_date = Column(DateTime, nullable=True)  # Planlanan teslimat tarihi
@@ -32,4 +33,5 @@ class Cargo(Base):
     station = relationship("Station", back_populates="cargos")
     vehicle = relationship("Vehicle", back_populates="cargos")
     route = relationship("Route", back_populates="cargos")
+    user = relationship("User", back_populates="cargos")
 

@@ -38,7 +38,7 @@ async def get_all_cargos(
     
     # Normal kullanıcılar sadece kendi kargolarını görebilir
     if not current_user.is_admin:
-        query = query.filter(Cargo.sender_name == current_user.full_name)
+        query = query.filter(Cargo.user_id == current_user.id)
     
     return query.order_by(Cargo.created_at.desc()).all()
 
@@ -107,7 +107,8 @@ async def create_cargo(
     new_cargo = Cargo(
         **cargo_data.model_dump(),
         tracking_code=tracking_code,
-        status=CargoStatus.PENDING.value
+        status=CargoStatus.PENDING.value,
+        user_id=current_user.id
     )
     
     db.add(new_cargo)
